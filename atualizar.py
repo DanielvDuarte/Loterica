@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Atualizador das Loterias.
-Baixa apenas os concursos novos de cada jogo (cache incremental),
-reconstroi a pagina Loterias.html e salva na Area de Trabalho.
-Rode pelo atalho "Atualizar Loterias".
+Atualizador das Loterias (uso via linha de comando ou importado pelo servidor).
+Baixa so os concursos novos de cada jogo e reconstroi Loterias.html.
 """
 import io, json, os, ssl, sys, time, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -63,7 +61,7 @@ def extract(slug, d):
         return [num, data, *sorted(dez), mes]
     return [num, data, *sorted(dez)]
 
-def build(slug):
+def build(slug, log=print):
     cache = os.path.join(HERE, slug+".json")
     have = {}
     if os.path.exists(cache):
@@ -72,24 +70,26 @@ def build(slug):
         except Exception: have = {}
     latest = extract(slug, fetch(slug, None))
     if latest is None:
-        print(f"[{slug}] sem conexao, mantendo cache ({len(have)})"); 
-        return [have[k] for k in sorted(have)]
+        log(f"[{slug}] sem conexao, mantendo cache ({len(have)})")
+        return [have[k] for k in sorted(have)], 0
     last = latest[0]; have[last]=latest
     missing = [n for n in range(1, last+1) if n not in have]
+    novos = 0
     if missing:
-        print(f"[{slug}] baixando {len(missing)} novo(s)...", flush=True)
+        log(f"[{slug}] baixando {len(missing)} novo(s)...")
         with ThreadPoolExecutor(max_workers=12) as ex:
             futs={ex.submit(lambda n=n: extract(slug, fetch(slug,n))):n for n in missing}
             for f in as_completed(futs):
                 r=f.result()
-                if r: have[r[0]]=r
+                if r: have[r[0]]=r; 
         for n in [n for n in range(1,last+1) if n not in have]:
             r=extract(slug, fetch(slug,n))
             if r: have[n]=r
+        novos = len(missing)
     rows=[have[k] for k in sorted(have)]
     json.dump(rows, open(cache,"w",encoding="utf-8"), ensure_ascii=False, separators=(",",":"))
-    print(f"[{slug}] ok ({len(rows)} concursos, ate o {last})", flush=True)
-    return rows
+    log(f"[{slug}] ok ({len(rows)} concursos, ate o {last})")
+    return rows, novos
 
 def desktop_dir():
     home=os.path.expanduser("~")
@@ -100,23 +100,26 @@ def desktop_dir():
         if os.path.isdir(p): return p
     return home
 
-def main():
-    print("Atualizando loterias (so os concursos novos)...\n")
-    data={}
+def rebuild_all(log=print):
+    """Atualiza todos os jogos e grava Loterias.html (pasta do projeto + Area de Trabalho)."""
+    data={}; total_novos=0
     for g in GAMES:
-        data[g]=build(g)
+        rows, novos = build(g, log=log)
+        data[g]=rows; total_novos+=novos
     tpl=io.open(TEMPLATE, encoding="utf-8").read()
     data_js=json.dumps(data, ensure_ascii=False, separators=(",",":"))
     html=tpl.replace("__DATA_JSON__", data_js)
-    out=os.path.join(desktop_dir(), "Loterias.html")
-    io.open(out,"w",encoding="utf-8").write(html)
     io.open(os.path.join(HERE,"Loterias.html"),"w",encoding="utf-8").write(html)
-    print(f"\nPronto! Pagina atualizada em:\n{out}")
-    return 0
+    try: io.open(os.path.join(desktop_dir(),"Loterias.html"),"w",encoding="utf-8").write(html)
+    except Exception: pass
+    resumo = f"{total_novos} concurso(s) novo(s)" if total_novos else "ja estava em dia"
+    log(f"\nPronto! {resumo}.")
+    return resumo
 
 if __name__ == "__main__":
+    print("Atualizando loterias (so os concursos novos)...\n")
     try:
-        main()
+        rebuild_all()
     except Exception as e:
         print("ERRO:", e)
     input("\nPressione ENTER para fechar...")

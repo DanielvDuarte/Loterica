@@ -20,11 +20,18 @@ que **nenhum padrão prevê o resultado**.
 
 ## Como usar
 
-1. Abra `Loterias.html` (gerado na Área de Trabalho) com duplo-clique. Funciona offline.
-2. Para atualizar os resultados, use o atalho **"Atualizar Loterias"** ou rode:
-   ```
-   python atualizar.py
-   ```
+- **Recomendado:** abra pelo atalho **"Loterias"** (Área de Trabalho). Ele sobe um servidor
+  local (`servidor.py`), abre a página no navegador e faz o botão **"🔄 Atualizar resultados"**
+  (topo da página) funcionar. Mantenha a janela aberta enquanto usa; feche para encerrar.
+- Também dá para abrir o `Loterias.html` direto (offline); nesse modo o botão de atualizar
+  não funciona (o navegador bloqueia a busca na Caixa por CORS), então use o servidor ou:
+  ```
+  python atualizar.py        # baixa só os concursos novos e regenera a página
+  python download_all.py     # (re)baixa o histórico completo
+  ```
+
+> Nota: a API da Caixa não envia cabeçalhos CORS, por isso a atualização é feita pelo Python
+> (servidor local), nunca pelo navegador diretamente.
 
 ## Como é feito
 
@@ -37,6 +44,7 @@ que **nenhum padrão prevê o resultado**.
 
 ```
 template.html       # página-modelo (contém __DATA_JSON__, substituído na montagem)
+servidor.py         # servidor local; abre a página e serve o endpoint /atualizar
 atualizar.py        # baixa só os concursos novos e regenera Loterias.html
 download_all.py     # baixa o histórico completo (uso pontual / primeira carga)
 assemble.py         # injeta os dados no template e grava Loterias.html
