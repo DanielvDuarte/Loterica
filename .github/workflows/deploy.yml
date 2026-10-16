@@ -1,23 +1,19 @@
-name: Atualizar e publicar (GitHub Pages)
+name: Atualizar resultados
 
 on:
-  push:
-    branches: [ main ]
   schedule:
-    - cron: "0 9 * * *"   # 09:00 UTC = 06:00 no horario de Brasilia, todo dia
+    - cron: "0 9 * * *"   # 09:00 UTC = 06:00 de Brasilia, todo dia
   workflow_dispatch:        # permite rodar manualmente pelo botao "Run workflow"
 
 permissions:
-  contents: write    # para commitar os caches atualizados
-  pages: write       # para publicar no Pages
-  id-token: write    # exigido pelo deploy-pages
+  contents: write           # para commitar index.html e os caches atualizados
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: atualizar
+  cancel-in-progress: false
 
 jobs:
-  build:
+  atualizar:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,43 +24,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Baixar resultados novos e construir a pagina
+      - name: Baixar resultados novos e reconstruir index.html
         run: python -c "import atualizar; atualizar.rebuild_all()"
 
-      - name: Preparar pasta do site
-        run: |
-          mkdir -p _site
-          cp Loterias.html _site/index.html
-
-      - name: Commitar caches atualizados
+      - name: Commitar e publicar
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add '*.json'
+          git add index.html '*.json'
           if git diff --cached --quiet; then
-            echo "Sem dados novos para commitar."
+            echo "Nada novo para publicar."
           else
             git commit -m "Atualiza resultados das loterias [skip ci]"
             git push
           fi
-
-      - name: Configurar Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - name: Enviar artefato do site
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Publicar no Pages
-        id: deployment
-        uses: actions/deploy-pages@v4

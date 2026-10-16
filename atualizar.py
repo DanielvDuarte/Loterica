@@ -117,6 +117,7 @@ def rebuild_all(log=print):
     data_js=json.dumps(data, ensure_ascii=False, separators=(",",":"))
     html=tpl.replace("__DATA_JSON__", data_js).replace("__BUILD_INFO__", build_info)
     io.open(os.path.join(HERE,"Loterias.html"),"w",encoding="utf-8").write(html)
+    io.open(os.path.join(HERE,"index.html"),"w",encoding="utf-8").write(html)  # para o GitHub Pages
     try: io.open(os.path.join(desktop_dir(),"Loterias.html"),"w",encoding="utf-8").write(html)
     except Exception: pass
     resumo = f"{total_novos} concurso(s) novo(s)" if total_novos else "ja estava em dia"
