@@ -54,6 +54,7 @@
     background:#063b35;color:#9af2e4;border:1px solid #0d5a50}
   .add{background:#063b35;color:#9af2e4;border:1px solid #0d5a50;border-radius:8px;padding:3px 10px;font-size:1rem;margin-left:6px;cursor:pointer;font-weight:700}
   .add:hover{background:#0a4f46}
+  .add:disabled{opacity:.6;cursor:default;background:#0a3f38}
   #precoInp{width:72px;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:1rem}
   .citem{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:9px 0;flex-wrap:wrap}
   .cvis{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -197,7 +198,8 @@ function gerar(slug){
         texto:j.map(x=>String(x).padStart(2,'0')).join(' ')+extraT});}
   }
   document.getElementById('jogos').innerHTML=
-    GERADOS.map((g,i)=>`<div class="jogo">${g.html}<button class="add" title="Adicionar ao cupom" onclick="addItem(${i})">＋</button></div>`).join('')
+    GERADOS.map((g,i)=>{const ja=noCupom(g);
+      return `<div class="jogo">${g.html}<button class="add" id="add${i}" title="${ja?'Já está no cupom':'Adicionar ao cupom'}" onclick="addItem(${i})"${ja?' disabled':''}>${ja?'✓':'＋'}</button></div>`;}).join('')
     +`<div class="row" style="margin-top:10px"><button class="sec" onclick="addTodos()">＋ Adicionar todos ao cupom (${reais(n*preco)})</button></div>`;
 }
 
@@ -205,8 +207,17 @@ function gerar(slug){
 let CUPOM=[];
 function saveCupom(){try{localStorage.setItem('cupom',JSON.stringify(CUPOM));}catch(e){}}
 function loadCupom(){try{const s=localStorage.getItem('cupom');if(s)CUPOM=JSON.parse(s)||[];}catch(e){CUPOM=[];}}
-function addItem(i){if(GERADOS[i]){CUPOM.push({...GERADOS[i]});saveCupom();renderCupom();}}
-function addTodos(){GERADOS.forEach(g=>CUPOM.push({...g}));saveCupom();renderCupom();}
+function itemKey(it){return it.slug+'|'+it.texto;}
+function noCupom(it){return CUPOM.some(x=>itemKey(x)===itemKey(it));}
+function marcaBotao(i){const b=document.getElementById('add'+i); if(b){b.textContent='✓';b.disabled=true;b.title='Já está no cupom';}}
+function addItem(i){const it=GERADOS[i]; if(!it) return;
+  if(!noCupom(it)){CUPOM.push({...it});saveCupom();renderCupom();}
+  marcaBotao(i);
+}
+function addTodos(){let add=0;
+  GERADOS.forEach((g,i)=>{ if(!noCupom(g)){CUPOM.push({...g});add++;} marcaBotao(i); });
+  if(add){saveCupom();renderCupom();}
+}
 function removeItem(i){CUPOM.splice(i,1);saveCupom();renderCupom();}
 function limparCupom(){if(confirm('Esvaziar o cupom?')){CUPOM=[];saveCupom();renderCupom();}}
 function renderCupom(){

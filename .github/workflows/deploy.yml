@@ -1,6 +1,8 @@
 name: Atualizar resultados
 
 on:
+  push:
+    branches: [ main ]      # a cada mudanca no codigo, reconstroi e publica
   schedule:
     - cron: "0 9 * * *"   # 09:00 UTC = 06:00 de Brasilia, todo dia
   workflow_dispatch:        # permite rodar manualmente pelo botao "Run workflow"
