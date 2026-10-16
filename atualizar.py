@@ -107,8 +107,15 @@ def rebuild_all(log=print):
         rows, novos = build(g, log=log)
         data[g]=rows; total_novos+=novos
     tpl=io.open(TEMPLATE, encoding="utf-8").read()
+    from datetime import datetime
+    try:
+        from zoneinfo import ZoneInfo
+        agora=datetime.now(ZoneInfo("America/Sao_Paulo"))
+    except Exception:
+        agora=datetime.now()
+    build_info=json.dumps(agora.strftime("%d/%m/%Y %H:%M"), ensure_ascii=False)
     data_js=json.dumps(data, ensure_ascii=False, separators=(",",":"))
-    html=tpl.replace("__DATA_JSON__", data_js)
+    html=tpl.replace("__DATA_JSON__", data_js).replace("__BUILD_INFO__", build_info)
     io.open(os.path.join(HERE,"Loterias.html"),"w",encoding="utf-8").write(html)
     try: io.open(os.path.join(desktop_dir(),"Loterias.html"),"w",encoding="utf-8").write(html)
     except Exception: pass
