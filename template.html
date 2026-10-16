@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loterias — Análise Honesta</title>
+<style>
+  :root{--bg:#0f1419;--card:#1a2230;--card2:#141b26;--ink:#e8edf4;--mut:#9fb0c3;
+    --acc:#2dd4bf;--warn:#fbbf24;--line:#2a3647;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;line-height:1.55}
+  .wrap{max-width:880px;margin:0 auto;padding:22px 16px 72px}
+  h1{font-size:1.65rem;margin:0 0 4px}
+  h2{font-size:1.12rem;margin:26px 0 12px;color:var(--acc);border-bottom:1px solid var(--line);padding-bottom:6px}
+  .sub{color:var(--mut);margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+  .banner{background:linear-gradient(135deg,#3a2a12,#2a1f10);border:1px solid #6b4e1f;
+    border-radius:14px;padding:14px 16px;margin:14px 0;color:#f6e4bf}
+  .banner b{color:var(--warn)}
+  button{background:var(--acc);color:#04231f;border:0;border-radius:10px;padding:11px 16px;
+    font-size:1rem;font-weight:700;cursor:pointer}
+  button:hover{filter:brightness(1.08)}
+  button.sec{background:#273449;color:var(--ink)}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+  .tab{background:#273449;color:var(--ink);border:1px solid var(--line);border-radius:999px;
+    padding:8px 14px;font-size:.92rem;font-weight:600;cursor:pointer}
+  .tab.on{background:var(--acc);color:#04231f;border-color:var(--acc)}
+  label{color:var(--mut);font-size:.92rem}
+  input[type=number]{width:72px;background:var(--card2);color:var(--ink);border:1px solid var(--line);
+    border-radius:8px;padding:8px;font-size:1rem}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .jogo{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0;align-items:center}
+  .bola{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;
+    background:#063b35;color:#9af2e4;border:1px solid #0d5a50}
+  .bola.trevo{background:#2a1e3b;color:#d6b4ff;border-color:#5b3e85}
+  .bola.col{background:#10263b;color:#9cc9f5;border-color:#1d4a6e}
+  .tag{background:#273449;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.85rem}
+  .meta{color:var(--mut);font-size:.82rem;margin-left:4px}
+  .verdict{border-radius:10px;padding:12px 14px;margin:10px 0;border:1px solid}
+  .v-ok{background:#0e2b22;border-color:#1f6b53;color:#bff5e2}
+  .v-info{background:#0e2230;border-color:#1f5b6b;color:#bfe9f5}
+  .legend{font-size:.8rem;color:var(--mut);margin-top:8px}
+  .grid{display:grid;gap:5px;margin-top:10px}
+  .cell{background:var(--card2);border:1px solid var(--line);border-radius:7px;padding:5px 2px;text-align:center}
+  .cell.hot{border-color:#b45309}.cell.cold{border-color:#1d4ed8}
+  .cell .n{font-weight:700;font-size:.85rem}.cell .f{font-size:.66rem;color:var(--mut)}
+  .kpi{display:flex;gap:12px;flex-wrap:wrap;margin:4px 0}
+  .kpi div{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+  .kpi span{display:block;color:var(--mut);font-size:.76rem}.kpi b{font-size:1.05rem}
+  .foot{color:var(--mut);font-size:.82rem;margin-top:26px;border-top:1px solid var(--line);padding-top:14px}
+  .loteca-grid{display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:center}
+  .pill{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:7px;font-weight:700;
+    background:#063b35;color:#9af2e4;border:1px solid #0d5a50}
+  .add{background:#063b35;color:#9af2e4;border:1px solid #0d5a50;border-radius:8px;padding:3px 10px;font-size:1rem;margin-left:6px;cursor:pointer;font-weight:700}
+  .add:hover{background:#0a4f46}
+  #precoInp{width:72px;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:1rem}
+  .citem{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:9px 0;flex-wrap:wrap}
+  .cvis{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .cvis .gname{font-size:.8rem;color:var(--mut);margin-right:4px;min-width:84px;display:inline-block}
+  .cplain{display:none}
+  .cprice{color:var(--acc);font-weight:700;white-space:nowrap}
+  .rm{background:#3a1a1a;color:#f8b4b4;border:1px solid #6b2b2b;border-radius:6px;cursor:pointer;margin-left:10px;padding:2px 8px}
+  .ctotal{margin-top:12px;font-size:1.15rem}
+  @media print{
+    body{background:#fff;color:#000}
+    .banner,.tabs,#panel,.sub,.foot,.add,.rm,.row,.legend{display:none !important}
+    #cupom-sec{border:none;padding:0}
+    .cvis{display:none !important}
+    .cplain{display:inline !important;font-size:1rem}
+    .citem{border-color:#999}
+    h1,#cupom-title,.ctotal{color:#000 !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎲 Loterias — Análise Honesta</h1>
+  <p class="sub">O oposto dos apps que "dão números certos". Aqui a estatística é real — e mostra por que ninguém prevê um sorteio.</p>
+  <div class="banner">
+    <b>⚠️ A verdade primeiro:</b> nenhuma análise aumenta sua chance de acertar. Cada aposta tem a mesma
+    chance, sempre. Estas páginas provam isso com os dados oficiais e só ajudam numa coisa concreta:
+    <b>evitar dividir o prêmio</b>, escolhendo combinações que pouca gente joga. Jogue por diversão.
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="panel"></div>
+
+  <h2 id="cupom-title">🧾 Meu cupom (para levar à lotérica)</h2>
+  <div class="card" id="cupom-sec">
+    <p style="margin-top:0;color:var(--mut)">Gere jogos em qualquer loteria e clique em <b>＋</b> para somar aqui. Dá para misturar loterias; o total soma tudo. Depois é só <b>imprimir</b> ou <b>baixar</b> para levar à casa lotérica.</p>
+    <div id="cupom"></div>
+  </div>
+
+  <div class="foot">
+    Fonte: resultados oficiais da Caixa. 100% offline — nenhum dado sai do seu computador.
+    Jogo é entretenimento; se virar problema, procure ajuda (0800&nbsp;611&nbsp;0911, Jogadores Anônimos).
+  </div>
+</div>
+
+<script>
+const DATA = __DATA_JSON__;   // { slug: [ [concurso,"data",...], ... ] }
+const MESES=["—","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+/* config por jogo. max=maior dezena, draw=qtd sorteada, bet=qtd da aposta */
+const GAMES={
+  megasena:{nome:"Mega-Sena",type:"nums",max:60,draw:6,bet:6,odds:"1 em 50.063.860"},
+  lotofacil:{nome:"Lotofácil",type:"nums",max:25,draw:15,bet:15,odds:"1 em 3.268.760"},
+  quina:{nome:"Quina",type:"nums",max:80,draw:5,bet:5,odds:"1 em 24.040.016"},
+  duplasena:{nome:"Dupla Sena",type:"dupla",max:50,draw:6,bet:6,odds:"1 em 15.890.700 por sorteio (há 2 por concurso)"},
+  supersete:{nome:"Super Sete",type:"supersete",cols:7,odds:"1 em 10.000.000"},
+  diadesorte:{nome:"Dia de Sorte",type:"nums",max:31,draw:7,bet:7,extra:"mes",odds:"1 em 2.629.575"},
+  maismilionaria:{nome:"+Milionária",type:"nums",max:50,draw:6,bet:6,extra:"trevos",trevosMax:6,trevosBet:2,odds:"1 em 238.360.500"},
+  timemania:{nome:"Timemania",type:"nums",max:80,draw:7,bet:10,odds:"1 em 26.472.637"},
+  loteca:{nome:"Loteca",type:"loteca",odds:"1 em 4.782.969 (se os 14 fossem puro acaso)"},
+};
+const ORDER=["megasena","lotofacil","quina","duplasena","supersete","diadesorte","maismilionaria","timemania","loteca"];
+
+/* preços de referência da aposta simples (out/2026) — editáveis na página */
+const PRECOS_DEFAULT={megasena:6.50,lotofacil:3.75,quina:3.00,duplasena:4.00,
+  supersete:3.75,diadesorte:3.00,maismilionaria:6.00,timemania:4.50,loteca:4.00};
+let PRECOS={...PRECOS_DEFAULT};
+function loadPrecos(){try{const s=localStorage.getItem('precos');if(s)PRECOS={...PRECOS_DEFAULT,...JSON.parse(s)};}catch(e){}}
+function savePrecos(){try{localStorage.setItem('precos',JSON.stringify(PRECOS));}catch(e){}}
+function setPreco(slug,v){PRECOS[slug]=parseFloat(String(v).replace(',','.'))||0;savePrecos();}
+function precoDe(slug){return PRECOS[slug]||0;}
+function reais(v){return 'R$ '+v.toFixed(2).replace('.',',');}
+
+/* ---- estatística sem libs ---- */
+function gammln(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];
+  let y=x,t=x+5.5;t-=(x+0.5)*Math.log(t);let s=1.000000000190015;for(let j=0;j<6;j++){y++;s+=c[j]/y;}return -t+Math.log(2.5066282746310005*s/x);}
+function gammp(a,x){if(x<0||a<=0)return NaN;
+  if(x<a+1){let ap=a,sum=1/a,del=sum;for(let n=0;n<400;n++){ap++;del*=x/ap;sum+=del;if(Math.abs(del)<Math.abs(sum)*1e-13)break;}return sum*Math.exp(-x+a*Math.log(x)-gammln(a));}
+  else{const FP=1e-300;let b=x+1-a,c=1/FP,d=1/b,h=d;for(let i=1;i<=400;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<FP)d=FP;c=b+an/c;if(Math.abs(c)<FP)c=FP;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-13)break;}return 1-Math.exp(-x+a*Math.log(x)-gammln(a))*h;}}
+function chiSqP(chi2,k){return 1-gammp(k/2,chi2/2);}
+function fmtP(p){return p<1e-4?p.toExponential(2):p.toFixed(4);}
+
+/* ---- gerador ---- */
+function filtro(j,cfg){
+  const s=[...j].sort((a,b)=>a-b);
+  let run=1;for(let i=1;i<s.length;i++){run=s[i]===s[i-1]+1?run+1:1;if(run>=4)return false;}
+  const pares=j.filter(n=>n%2===0).length,frac=pares/j.length;
+  if(frac<0.25||frac>0.75)return false;
+  const metade=Math.ceil(cfg.max/2),baixo=j.filter(n=>n<=metade).length;
+  if(baixo===0||baixo===j.length)return false;
+  return true;
+}
+function sorteia(k,max){const s=new Set();while(s.size<k)s.add(1+Math.floor(Math.random()*max));return [...s].sort((a,b)=>a-b);}
+function gerarNums(cfg){
+  const dense=cfg.bet/cfg.max>0.5;
+  for(let t=0;t<4000;t++){const j=sorteia(cfg.bet,cfg.max);if(dense||filtro(j,cfg))return j;}
+  return sorteia(cfg.bet,cfg.max);
+}
+function bolasHTML(arr,cls){return arr.map(n=>`<div class="bola ${cls||''}">${String(n).padStart(2,'0')}</div>`).join('');}
+
+let GERADOS=[];
+function gerar(slug){
+  const cfg=GAMES[slug];
+  let n=Math.max(1,Math.min(50,parseInt(document.getElementById('qtd').value)||6));
+  const preco=precoDe(slug);
+  GERADOS=[];
+  if(cfg.type==='supersete'){
+    for(let i=0;i<n;i++){const c=[];for(let k=0;k<7;k++)c.push(Math.floor(Math.random()*10));
+      GERADOS.push({slug,nome:cfg.nome,preco,
+        html:c.map(d=>`<div class="bola col">${d}</div>`).join(''),
+        texto:c.join(' ')});}
+  }else if(cfg.type==='loteca'){
+    const op=['1','X','2'];
+    for(let i=0;i<n;i++){const r=[];for(let m=0;m<14;m++)r.push(op[Math.floor(Math.random()*3)]);
+      GERADOS.push({slug,nome:cfg.nome,preco,
+        html:r.map((x,idx)=>`<div class="pill" title="Jogo ${idx+1}">${x}</div>`).join(''),
+        texto:r.join(' ')});}
+  }else{
+    const vistos=new Set();
+    while(GERADOS.length<n){const j=gerarNums(cfg),k=j.join('-');if(vistos.has(k))continue;vistos.add(k);
+      let extraH='',extraT='';
+      if(cfg.extra==='trevos'){const tr=sorteia(cfg.trevosBet,cfg.trevosMax);extraH=' '+bolasHTML(tr,'trevo')+'<span class="meta">trevos</span>';extraT=' + trevos '+tr.join(' ');}
+      if(cfg.extra==='mes'){const m=1+Math.floor(Math.random()*12);extraH=` <span class="tag">${MESES[m]}</span>`;extraT=' + '+MESES[m];}
+      const soma=j.reduce((a,b)=>a+b,0),pares=j.filter(x=>x%2===0).length;
+      GERADOS.push({slug,nome:cfg.nome,preco,
+        html:bolasHTML(j)+extraH+`<span class="meta">soma ${soma} · ${pares}p/${j.length-pares}í</span>`,
+        texto:j.map(x=>String(x).padStart(2,'0')).join(' ')+extraT});}
+  }
+  document.getElementById('jogos').innerHTML=
+    GERADOS.map((g,i)=>`<div class="jogo">${g.html}<button class="add" title="Adicionar ao cupom" onclick="addItem(${i})">＋</button></div>`).join('')
+    +`<div class="row" style="margin-top:10px"><button class="sec" onclick="addTodos()">＋ Adicionar todos ao cupom (${reais(n*preco)})</button></div>`;
+}
+
+/* ---- cupom ---- */
+let CUPOM=[];
+function saveCupom(){try{localStorage.setItem('cupom',JSON.stringify(CUPOM));}catch(e){}}
+function loadCupom(){try{const s=localStorage.getItem('cupom');if(s)CUPOM=JSON.parse(s)||[];}catch(e){CUPOM=[];}}
+function addItem(i){if(GERADOS[i]){CUPOM.push({...GERADOS[i]});saveCupom();renderCupom();}}
+function addTodos(){GERADOS.forEach(g=>CUPOM.push({...g}));saveCupom();renderCupom();}
+function removeItem(i){CUPOM.splice(i,1);saveCupom();renderCupom();}
+function limparCupom(){if(confirm('Esvaziar o cupom?')){CUPOM=[];saveCupom();renderCupom();}}
+function renderCupom(){
+  const el=document.getElementById('cupom');if(!el)return;
+  if(!CUPOM.length){el.innerHTML='<p style="color:var(--mut);margin:0">Cupom vazio. Gere jogos acima e clique em ＋.</p>';return;}
+  let total=0;
+  const linhas=CUPOM.map((it,i)=>{total+=it.preco;
+    return `<div class="citem">
+      <div class="cvis"><span class="gname">${it.nome}</span>${it.html}</div>
+      <span class="cplain">${it.nome}: ${it.texto}</span>
+      <div class="cprice">${reais(it.preco)}<button class="rm" title="remover" onclick="removeItem(${i})">✕</button></div>
+    </div>`;}).join('');
+  el.innerHTML=linhas+
+    `<div class="ctotal"><b>Total: ${reais(total)}</b> · ${CUPOM.length} jogo(s)</div>
+     <div class="row" style="margin-top:10px">
+       <button onclick="imprimir()">🖨 Imprimir</button>
+       <button class="sec" onclick="baixar()">💾 Baixar .txt</button>
+       <button class="sec" onclick="limparCupom()">🗑 Limpar</button>
+     </div>`;
+}
+function baixar(){
+  let total=0;const linhas=CUPOM.map(it=>{total+=it.preco;return `- ${it.nome}: ${it.texto}  (${reais(it.preco)})`;});
+  const hoje=new Date().toLocaleString('pt-BR');
+  const txt=['=== MEU CUPOM DE LOTERIAS ===','Gerado em '+hoje,'',...linhas,'',
+    'TOTAL: '+reais(total)+'  ('+CUPOM.length+' jogos)','',
+    'Valores de referencia; confira na loterica. Jogue por diversao.'].join('\r\n');
+  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu_cupom_loterias.txt';
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},100);
+}
+function imprimir(){window.print();}
+
+/* ---- dezenas sorteadas de uma linha, por jogo (para análise) ---- */
+function dezenasDe(slug,row){
+  const cfg=GAMES[slug];
+  if(cfg.type==='dupla')return row.slice(2,8).concat(row.slice(8,14));
+  if(cfg.extra==='trevos')return row.slice(2,8);
+  if(cfg.extra==='mes')return row.slice(2,9);
+  return row.slice(2,2+cfg.draw);
+}
+
+/* ---- análise ---- */
+function analisar(slug){
+  const cfg=GAMES[slug],rows=DATA[slug]||[];
+  const box=document.getElementById('analise');
+  if(!rows.length){box.innerHTML='<p style="color:var(--mut)">Sem dados baixados para este jogo.</p>';return;}
+  if(cfg.type==='supersete')return analiseSuperSete(rows,box);
+  if(cfg.type==='loteca')return analiseLoteca(rows,box);
+
+  const max=cfg.max,freq=new Array(max+1).fill(0);
+  let bolasTotais=0;
+  for(const r of rows){const dz=dezenasDe(slug,r);for(const d of dz){if(d>=1&&d<=max){freq[d]++;bolasTotais++;}}}
+  const esp=bolasTotais/max;
+  let chi=0;for(let n=1;n<=max;n++){const o=freq[n];chi+=(o-esp)*(o-esp)/esp;}
+  const pUni=chiSqP(chi,max-1);
+  // independência no 1º sorteio
+  let a=0,b=0,c=0,e=0;
+  for(let i=0;i<rows.length-1;i++){
+    const now=new Set(dezenasDe(slug,rows[i])),nxt=new Set(dezenasDe(slug,rows[i+1]));
+    for(let n=1;n<=max;n++){const iN=now.has(n),iX=nxt.has(n);
+      if(iN&&iX)a++;else if(iN&&!iX)b++;else if(!iN&&iX)c++;else e++;}}
+  const tot=a+b+c+e,ra=a+b,rc=c+e,ca=a+c,cb=b+e;
+  const cells=[[a,ra*ca/tot],[b,ra*cb/tot],[c,rc*ca/tot],[e,rc*cb/tot]];
+  let chiInd=0;for(const [o,ex] of cells)chiInd+=(o-ex)*(o-ex)/ex;
+  const pInd=chiSqP(chiInd,1);
+  const sd=Math.sqrt(bolasTotais*(1/max)*(1-1/max));
+  const maxN=freq.indexOf(Math.max(...freq.slice(1)));
+  const minN=freq.slice(1).indexOf(Math.min(...freq.slice(1)))+1;
+  let fair;
+  if(pUni>0.05)fair='✅ p &gt; 0,05 → frequências <b>compatíveis com sorteio justo</b>. "Quente" vs "frio" é puro ruído.';
+  else if(pUni>0.01)fair='➖ p entre 0,01 e 0,05 → <b>limítrofe</b>. Num sorteio perfeitamente justo o p-valor cai abaixo de 0,05 em ~1 a cada 20 amostras, então <b>não é prova</b> de vício nem de previsibilidade. O teste 1 é o decisivo.';
+  else fair='⚠️ p ≤ 0,01 → desvio relevante nesta amostra. Ainda assim <b>não prevê</b> número algum.';
+
+  box.innerHTML=`
+    <p style="margin-top:0;color:var(--mut)">${rows.length.toLocaleString('pt-BR')} concursos · ${cfg.draw} dezenas sorteadas de 1 a ${max}.</p>
+    <div class="verdict ${pInd>0.05?'v-ok':'v-info'}">
+      <b>1) O passado prevê o futuro?</b> χ²=${chiInd.toFixed(2)} · p=${fmtP(pInd)}<br>
+      ${pInd>0.05?'✅ p &gt; 0,05 → ter saído num concurso <b>não muda</b> a chance no próximo. É isto que torna impossível "prever".':'⚠️ p ≤ 0,05 → dependência aparente a investigar (raro).'}
+    </div>
+    <div class="verdict ${pUni>0.05?'v-ok':'v-info'}">
+      <b>2) O sorteio é justo?</b> χ²=${chi.toFixed(1)} · p=${fmtP(pUni)}<br>${fair}
+    </div>
+    <div class="verdict v-info">
+      <b>Flutuação esperada:</b> média ${esp.toFixed(0)} aparições/dezena, variando ±${sd.toFixed(0)} por acaso.
+      Mais saiu: ${String(maxN).padStart(2,'0')} (${freq[maxN]}×) · menos: ${String(minN).padStart(2,'0')} (${freq[minN]}×) — dentro do acaso.
+    </div>
+    <h3 style="margin:14px 0 4px;font-size:1rem">Frequência (1 a ${max})</h3>
+    <div class="grid" id="grid"></div>
+    <div class="legend"><span style="color:#f59e0b">▣</span> acima da média · <span style="color:#3b82f6">▣</span> abaixo.</div>
+    <h3 style="margin:16px 0 4px;font-size:1rem">Gráfico: frequência × média</h3>
+    <div id="chartwrap"></div>
+    <div class="legend">Linha tracejada = média de um sorteio justo. As barras orbitam nela.</div>`;
+  const cols=max>40?10:(max>24?8:5);
+  const g=document.getElementById('grid');g.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  for(let n=1;n<=max;n++){const cls=freq[n]>esp?'hot':(freq[n]<esp?'cold':'');
+    g.innerHTML+=`<div class="cell ${cls}"><div class="n">${String(n).padStart(2,'0')}</div><div class="f">${freq[n]}</div></div>`;}
+  drawChart(freq,esp,max);
+}
+
+function analiseSuperSete(rows,box){
+  // frequência de dígitos 0-9 por coluna + pool geral
+  const cols=Array.from({length:7},()=>new Array(10).fill(0));
+  for(const r of rows){const d=r.slice(2);for(let c=0;c<7;c++)cols[c][d[c]]++;}
+  const pool=new Array(10).fill(0);for(const c of cols)for(let d=0;d<10;d++)pool[d]+=c[d];
+  const esp=rows.length*7/10;
+  let chi=0;for(let d=0;d<10;d++){const o=pool[d];chi+=(o-esp)*(o-esp)/esp;}
+  const p=chiSqP(chi,9);
+  box.innerHTML=`
+    <p style="margin-top:0;color:var(--mut)">${rows.length.toLocaleString('pt-BR')} concursos · 7 colunas, cada uma um dígito de 0 a 9 (independentes).</p>
+    <div class="verdict ${p>0.05?'v-ok':'v-info'}">
+      <b>Os dígitos são equiprováveis?</b> χ²=${chi.toFixed(1)} · p=${fmtP(p)}<br>
+      ${p>0.05?'✅ p &gt; 0,05 → os 10 dígitos saem em proporções <b>compatíveis com o acaso</b>. Cada coluna é um sorteio de 1/10 independente.':'➖ pequeno desvio — esperado em amostra finita; não prevê dígito.'}</div>
+    <h3 style="margin:14px 0 4px;font-size:1rem">Frequência de cada dígito (todas as colunas)</h3>
+    <div class="grid" id="grid" style="grid-template-columns:repeat(10,1fr)"></div>
+    <div id="chartwrap" style="margin-top:12px"></div>
+    <div class="legend">A chance de acertar as 7 colunas é 1 em 10 milhões — fixa, não muda com dígito "quente".</div>`;
+  const g=document.getElementById('grid');
+  for(let d=0;d<10;d++){const cls=pool[d]>esp?'hot':(pool[d]<esp?'cold':'');
+    g.innerHTML+=`<div class="cell ${cls}"><div class="n">${d}</div><div class="f">${pool[d]}</div></div>`;}
+  const freq=[0,...pool];drawChart(freq,esp,10,true);
+}
+
+function analiseLoteca(rows,box){
+  let um=0,x=0,dois=0,tot=0;
+  for(const r of rows){for(const ch of r[2]){if(ch==='1')um++;else if(ch==='X')x++;else if(ch==='2')dois++;if('1X2'.includes(ch))tot++;}}
+  const pc=v=>(100*v/tot).toFixed(1)+'%';
+  box.innerHTML=`
+    <p style="margin-top:0;color:var(--mut)">${rows.length.toLocaleString('pt-BR')} concursos · 14 jogos cada. A Loteca <b>não é sorteio de números</b>: depende de futebol.</p>
+    <div class="kpi">
+      <div><span>Mandante venceu (1)</span><b>${pc(um)}</b></div>
+      <div><span>Empate (X)</span><b>${pc(x)}</b></div>
+      <div><span>Visitante venceu (2)</span><b>${pc(dois)}</b></div>
+    </div>
+    <div class="verdict v-info">
+      <b>O "fator casa" é real</b> — mandantes vencem bem mais que visitantes. Mas isso <b>não</b> é como
+      a Mega: cada rodada tem times e formas diferentes, então o histórico global é só uma tendência,
+      não uma fórmula. Marcar sempre "1" não garante nada. Palpite consciente &gt; número mágico.
+    </div>
+    <div id="chartwrap"></div>`;
+  const freq=[0,um,x,dois],esp=tot/3;
+  drawChartLabels(freq.slice(1),esp,['1 (casa)','X','2 (fora)']);
+}
+
+function drawChart(freq,esp,max,zeroBased){
+  const W=600,H=200,padL=10,padR=10,top=14,base=168;
+  const plotW=W-padL-padR,bw=plotW/max,maxF=Math.max(...freq.slice(1));
+  const sc=(base-top)/maxF,meanY=base-esp*sc;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">`;
+  for(let n=1;n<=max;n++){const h=freq[n]*sc,x=padL+(n-1)*bw,y=base-h;
+    const col=freq[n]>esp?'#d98324':'#3b82f6';
+    s+=`<rect x="${(x+0.6).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw-1.2).toFixed(1)}" height="${h.toFixed(1)}" fill="${col}" opacity="0.85"><title>${zeroBased?(n-1):String(n).padStart(2,'0')}: ${freq[n]}×</title></rect>`;}
+  s+=`<line x1="${padL}" y1="${meanY.toFixed(1)}" x2="${W-padR}" y2="${meanY.toFixed(1)}" stroke="#e8edf4" stroke-dasharray="4 3" stroke-width="1"/>`;
+  s+=`<text x="${W-padR}" y="${(meanY-4).toFixed(1)}" fill="#e8edf4" font-size="9" text-anchor="end">média ${esp.toFixed(0)}</text></svg>`;
+  document.getElementById('chartwrap').innerHTML=s;
+}
+function drawChartLabels(vals,esp,labels){
+  const W=600,H=200,padL=10,padR=10,top=20,base=160,n=vals.length;
+  const bw=(W-padL-padR)/n,maxF=Math.max(...vals),sc=(base-top)/maxF,meanY=base-esp*sc;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">`;
+  for(let i=0;i<n;i++){const h=vals[i]*sc,x=padL+i*bw,y=base-h;
+    s+=`<rect x="${(x+bw*0.2).toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*0.6).toFixed(1)}" height="${h.toFixed(1)}" fill="#2dd4bf" opacity="0.85"/>`;
+    s+=`<text x="${(x+bw/2).toFixed(1)}" y="${(y-5).toFixed(1)}" fill="#e8edf4" font-size="11" text-anchor="middle">${vals[i].toLocaleString('pt-BR')}</text>`;
+    s+=`<text x="${(x+bw/2).toFixed(1)}" y="184" fill="#9fb0c3" font-size="11" text-anchor="middle">${labels[i]}</text>`;}
+  s+=`<line x1="${padL}" y1="${meanY.toFixed(1)}" x2="${W-padR}" y2="${meanY.toFixed(1)}" stroke="#e8edf4" stroke-dasharray="4 3" stroke-width="1"/></svg>`;
+  document.getElementById('chartwrap').innerHTML=s;
+}
+
+/* ---- painel / navegação ---- */
+function selecionar(slug){
+  const cfg=GAMES[slug];
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.g===slug));
+  const genLabel = cfg.type==='loteca'?'Gerar palpites':'Gerar jogos';
+  const dica = cfg.type==='loteca'
+    ? 'Preenche os 14 jogos ao acaso. Na Loteca o que conta é entender os confrontos — isto é só um ponto de partida.'
+    : (cfg.type==='supersete'
+      ? 'Sorteia um dígito por coluna. Nenhuma combinação é mais provável que outra.'
+      : 'Não aumenta a chance de ganhar (impossível). Evita padrões muito jogados (datas, sequências) para você dividir menos o prêmio se ganhar.');
+  document.getElementById('panel').innerHTML=`
+    <h2>${cfg.nome}</h2>
+    <div class="card">
+      <p style="margin-top:0;color:var(--mut)">${dica}</p>
+      <div class="row">
+        <label>Quantos: <input id="qtd" type="number" min="1" max="50" value="6"></label>
+        <button onclick="gerar('${slug}')">${genLabel}</button>
+        <button class="sec" onclick="gerar('${slug}')">🔄 Outros</button>
+      </div>
+      <div id="jogos"></div>
+    </div>
+    <div class="card">
+      <div class="kpi">
+        <div><span>Chance de acertar tudo</span><b>${cfg.odds}</b></div>
+        <div><span>Preço da aposta (editável)</span><b>R$ <input id="precoInp" type="number" step="0.5" min="0" value="${precoDe(slug).toFixed(2)}" onchange="setPreco('${slug}',this.value);gerar('${slug}')"></b></div>
+      </div>
+      <p style="color:var(--mut);margin-bottom:0">A chance é fixa pela matemática — estratégia não muda nada. O preço é um valor de referência (out/2026); ajuste se a lotérica cobrar diferente.</p>
+    </div>
+    <h2>Análise do histórico real</h2>
+    <div class="card"><div id="analise"></div></div>`;
+  gerar(slug);
+  analisar(slug);
+}
+(function init(){
+  loadPrecos();loadCupom();
+  const tabs=document.getElementById('tabs');
+  tabs.innerHTML=ORDER.map(s=>`<div class="tab" data-g="${s}" onclick="selecionar('${s}')">${GAMES[s].nome}</div>`).join('');
+  selecionar('megasena');
+  renderCupom();
+})();
+</script>
+</body>
+</html>
